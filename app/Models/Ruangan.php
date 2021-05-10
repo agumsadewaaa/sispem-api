@@ -71,7 +71,6 @@ class Ruangan extends Model
                         ->where('transaksis.tanggal_selesai', '<=', $akhir)
                         ->select('ruangans.*')
                         ->where('transaksis.status', 0)
-                        ->groupBy('ruangans.id', 'ruangans.nama_ruangan', 'ruangans.kapasitas', 'need_wr_conf', 'ruangans.penjaga_id', 'ruangans.created_at', 'ruangans.updated_at')
                         ->get();
             }
             return Ruangan::join('transaksis', 'transaksis.ruangan_id', '=', 'ruangans.id')

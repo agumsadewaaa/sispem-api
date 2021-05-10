@@ -29,8 +29,6 @@ Route::get('transaksis/listSemua', 'TransaksiController@listSemua')->name('listS
 Route::get('transaksis/detail/{id}', 'TransaksiController@detail')->name('detailTransaksi');
 
 Route::get('transaksi/{id}/cetak', 'TransaksiController@cetak')->name('cetak');
-Route::post('laporanPeminjaman', 'LaporanController@peminjaman')->name('laporanPeminjaman');
-Route::post('laporanPegaduan', 'LaporanController@pengaduan')->name('laporanPengaduan');
 Route::get('panduan', function () {
     if (Auth::user()->isUser()) {
         return view('panduan.peminjam');
@@ -39,6 +37,9 @@ Route::get('panduan', function () {
     return redirect()->back();
 })->name('panduan');
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
+Route::post('auth/login', 'AuthController@login');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::get('auth/me', 'AuthController@me');
+    Route::post('auth/logout', 'AuthController@logout');
 });

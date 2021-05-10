@@ -13,6 +13,7 @@ use Response;
 use App\Models\Penjaga;
 use App\User;
 use Auth;
+use Illuminate\Support\Facades\DB;
 
 class RuanganController extends AppBaseController
 {
@@ -34,9 +35,11 @@ class RuanganController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $this->ruanganRepository->pushCriteria(new RequestCriteria($request));
-        $ruangans = $this->ruanganRepository->all();
+        // $this->ruanganRepository->pushCriteria(new RequestCriteria($request));
+        // $ruangans = $this->ruanganRepository->all();
 
+        $ruangans = DB :: table('ruangans')
+        ->join('penjagas','penjagas.id','=','ruangans.penjaga_id')->get();
         return response($ruangans);
     }
 

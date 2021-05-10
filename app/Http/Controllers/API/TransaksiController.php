@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\API;
 
 use App\Http\Requests\CreateTransaksiRequest;
 use App\Http\Requests\UpdateTransaksiRequest;
@@ -13,6 +13,7 @@ use Response;
 use App\Models\Ruangan;
 use App\Models\Transaksi;
 use App\Models\Peminjam;
+use Carbon\Carbon;
 
 class TransaksiController extends AppBaseController
 {
@@ -21,11 +22,11 @@ class TransaksiController extends AppBaseController
 
     public function __construct(TransaksiRepository $transaksiRepo)
     {
-        $this->middleware('active');
-        $this->middleware('peminjam')->except('listSemua', 'rekapPeminjaman', 'rekapPengaduan', 'detail');
-        $this->middleware('sekarang')->only('show');
-        $this->middleware('jadwal')->only('store');
-        $this->middleware('admin')->only('rekapPengaduan', 'rekapPeminjaman');
+        // $this->middleware('active');
+        // $this->middleware('peminjam')->except('listSemua', 'rekapPeminjaman', 'rekapPengaduan', 'detail');
+        // $this->middleware('sekarang')->only('show');
+        // $this->middleware('jadwal')->only('store');
+        // $this->middleware('admin')->only('rekapPengaduan', 'rekapPeminjaman');
         $this->transaksiRepository = $transaksiRepo;
     }
 
@@ -119,8 +120,22 @@ class TransaksiController extends AppBaseController
             $nopeId[] = $value->id;
         }
         // dd($nope);
-        $tersedia = Ruangan::whereNotIn('id', $nopeId)->get();
-        $semua = $tersedia->merge($nope);
+        
+        $tersedia = Ruangan::whereNotIn('ruangans.id', $nopeId)
+        ->join('penjagas','penjagas.id','=','ruangans.penjaga_id')->get();
+
+        $dipinjam = Ruangan::whereIn('ruangans.id', $nopeId)
+        ->join('penjagas','penjagas.id','=','ruangans.penjaga_id')->get();
+
+        foreach ($tersedia as $tersedias){
+            $tersedias->status = 'Tersedia';
+        }
+
+        foreach ($dipinjam as $dipinjams){
+            $dipinjams->status = 'Sedang Dipinjam';
+        }
+       
+        $semua = $tersedia->merge($dipinjam);
         // dd($jenis);
         switch ($jenis) {
           case 'tersedia':
@@ -137,12 +152,13 @@ class TransaksiController extends AppBaseController
             return redirect()->back();
         }
         // dd($nope);
-        return view('transaksis.index')
-            ->with('transaksis', $transaksis)
-            ->with('ruangans', $ruangans)
-            ->with('jenis', $jenis)
-            ->with('mulai', $mulai)
-            ->with('akhir', $akhir);
+        // return view('transaksis.index')
+        //     ->with('transaksis', $transaksis)
+        //     ->with('ruangans', $ruangans)
+        //     ->with('jenis', $jenis)
+        //     ->with('mulai', $mulai)
+        //     ->with('akhir', $akhir);
+        return response($semua);
     }
 
     /**
@@ -178,9 +194,7 @@ class TransaksiController extends AppBaseController
         $input['periode'] = Date('Y');
         $transaksi = $this->transaksiRepository->create($input);
 
-        Flash::success('Transaksi saved successfully.');
-
-        return redirect(route('peminjams.transaksis.index', [$peminjam]));
+        return response()->json([$transaksi]);
     }
 
     /**
@@ -192,9 +206,13 @@ class TransaksiController extends AppBaseController
      */
     public function show($id)
     {
-        $transaksis = Peminjam::find($id)->transaksis->sortByDesc('id');
+        $transaksis = Transaksi::where('peminjam_id' , '=', $id)
+        ->join('ruangans','ruangans.id','=','transaksis.ruangan_id')
+        ->join('penjagas','penjagas.id','=','ruangans.penjaga_id')
+        ->select('transaksis.*', 'ruangans.nama_ruangan', 'penjagas.nomor_handphone')
+        ->orderBy('transaksis.id')->get();
         // dd($transaksis);
-        return view('transaksis.show')->with('transaksis', $transaksis);
+        return response($transaksis);
     }
 
     /**
@@ -251,7 +269,7 @@ class TransaksiController extends AppBaseController
      */
     public function destroy($peminjam, $id)
     {
-        $transaksi = $this->transaksiRepository->withoutRelations($id);
+        $transaksi = $this->transaksiRepository->findWithoutFail($id);
 
         if (empty($transaksi)) {
             Flash::error('Peminjaman not found');
