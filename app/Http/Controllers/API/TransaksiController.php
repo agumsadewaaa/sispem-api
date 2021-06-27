@@ -84,20 +84,23 @@ class TransaksiController extends AppBaseController
               ->with('ruangan', $ruangan);
     }
 
-    public function listSemua(Request $request)
+    public function listSemua($id)
     {
-        $this->transaksiRepository->pushCriteria(new RequestCriteria($request));
-        $transaksis = $this->transaksiRepository->orderBy('id', 'desc')->all();
-        if (\Auth::user()->isWr()) {
-            $transaksis = $transaksis->filter(function ($value, $key) {
+        $transaksis = Transaksi::join('ruangans','ruangans.id','=','transaksis.ruangan_id')
+        ->join('penjagas','penjagas.id','=','ruangans.penjaga_id')
+        ->join('peminjams','peminjams.id','=','transaksis.peminjam_id')
+        ->join('users','users.id','=','peminjams.user_id')
+        ->select('transaksis.*', 'ruangans.nama_ruangan as nama_ruangan', 'penjagas.nomor_handphone as nomor_handphone', 'peminjams.nama_organisasi as nama_organisasi', 'users.name as nama_peminjam')->get();
+        if ($id == 2) {
+            $transaksis = $transaksis->filter(function ($value) {
                 return $value->ruangan->need_wr_conf == 1;
-            });
-        } elseif (\Auth::user()->isKbsd()) {
-            $transaksis = $transaksis->filter(function ($value, $key) {
+            })->values();
+        } elseif ($id == 3) {
+            $transaksis = $transaksis->filter(function ($value) {
                 return $value->ruangan->need_wr_conf == 0;
-            });
+            })->values();
         }
-        return view('transaksis.list')->with('transaksis', $transaksis);
+        return response($transaksis);
     }
 
     /**
@@ -267,20 +270,14 @@ class TransaksiController extends AppBaseController
      *
      * @return Response
      */
-    public function destroy($peminjam, $id)
+    public function destroy($id)
     {
-        $transaksi = $this->transaksiRepository->findWithoutFail($id);
+        $transaksi = Transaksi::find($id);
 
-        if (empty($transaksi)) {
-            Flash::error('Peminjaman not found');
-
-            return redirect()->back();
-        }
-
-        $this->transaksiRepository->delete($id);
+        $transaksi->delete();
 
         Flash::success('Peminjaman berhasil dibatalkan');
 
-        return redirect()->back();
+        return response($transaksi);
     }
 }

@@ -34,6 +34,7 @@ class AuthController extends Controller
         $token = $user->createToken($req->device_name)->plainTextToken;
         $this->response['message'] = "success";
         $this->response['data'] = [
+            'id' => $user['id'],
             'token' => $token
         ];
 
@@ -42,9 +43,17 @@ class AuthController extends Controller
 
     public function me()
     {
-        $user = Auth::user()
-        ->join('peminjams','peminjams.user_id','=','users.id')
-        ->select('users.*', 'peminjams.id as peminjam_id')->first();
+        $usertoken = auth()->user()->currentAccessToken();
+        $userid = Auth::user()->select('users.*')->where('users.id', '=', $usertoken['tokenable_id'])->first();
+
+        if($userid['role_id'] == 6){
+            $user = Auth::user()
+            ->join('peminjams','peminjams.user_id','=','users.id')
+            ->select('users.*', 'peminjams.id as peminjam_id')->where('users.id', '=', $userid['id'])->first();
+        }else{
+            $user = Auth::user()->select('users.*')->where('users.id', '=', $userid['id'])->first();
+            $user['peminjam_id'] = 0;
+        }
 
         $this->response['message'] = "success";
         $this->response['data'] = $user;

@@ -25,8 +25,9 @@ Route::get('kritikSaran', 'PengaduanController@index')->name('listPengaduan');
 
 Route::resource('akuns', 'AkunController');
 
-Route::get('transaksis/listSemua', 'TransaksiController@listSemua')->name('listSemua');
+Route::get('transaksis/listSemua/{id}', 'TransaksiController@listSemua')->name('listSemua');
 Route::get('transaksis/detail/{id}', 'TransaksiController@detail')->name('detailTransaksi');
+Route::delete('transaksis/{id}', 'TransaksiController@destroy');
 
 Route::get('transaksi/{id}/cetak', 'TransaksiController@cetak')->name('cetak');
 Route::get('panduan', function () {
