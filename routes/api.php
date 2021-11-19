@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 Route::resource('ruangans', 'RuanganController');
 Route::resource('penjagas', 'PenjagaController');
 Route::resource('pesanKonfirmasis', 'PesanKonfirmasiController');
+Route::get('pesanKonfirmasis/get/{id}', 'PesanKonfirmasiController@get')->name('get');
 
 Route::resource('peminjams.transaksis', 'TransaksiController');
 Route::get('peminjams/{pem}/transaksis/filter/{jenis}', 'TransaksiController@index')

@@ -11,6 +11,7 @@ use Flash;
 use Prettus\Repository\Criteria\RequestCriteria;
 use Response;
 use App\Models\Transaksi;
+use Illuminate\Support\Facades\DB;
 
 class PengaduanController extends AppBaseController
 {
@@ -19,7 +20,7 @@ class PengaduanController extends AppBaseController
 
     public function __construct(PengaduanRepository $pengaduanRepo)
     {
-        $this->middleware('active');
+        // $this->middleware('active');
         $this->pengaduanRepository = $pengaduanRepo;
     }
 
@@ -31,11 +32,14 @@ class PengaduanController extends AppBaseController
      */
     public function index(Request $request)
     {
-        // $this->pengaduanRepository->pushCriteria(new RequestCriteria($request));
-        // $pengaduans = $this->pengaduanRepository->all();
-        $selesai = Transaksi::where('status', 1)->orderBy('id', 'desc')->get();
-        return view('pengaduans.index')
-            ->with('pengaduans', $selesai);
+        $kritiks = DB :: table('pengaduans')
+        ->join('transaksis','transaksis.id','=','pengaduans.transaksi_id')
+        ->join('ruangans','ruangans.id','=','transaksis.ruangan_id')
+        ->join('peminjams','peminjams.id','=','transaksis.peminjam_id')
+        ->join('users','users.id','=','peminjams.user_id')
+        ->select('pengaduans.*', 'users.name as nama_peminjam', 'transaksis.tanggal_mulai as mulai', 'transaksis.tanggal_selesai as selesai', 'ruangans.nama_ruangan as nama_ruangan')
+        ->orderBy('pengaduans.id', 'desc')->get();
+        return response($kritiks);
     }
 
     /**

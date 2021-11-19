@@ -14,6 +14,7 @@ use App\Models\Ruangan;
 use App\Models\Transaksi;
 use App\Models\Peminjam;
 use Carbon\Carbon;
+use PDF;
 
 class TransaksiController extends AppBaseController
 {
@@ -53,14 +54,6 @@ class TransaksiController extends AppBaseController
               ->with('ruangan', $ruangan);
     }
 
-    public function cetak($id)
-    {
-        $transaksi = Transaksi::find($id);
-
-        return view('transaksis.print')
-                ->with('transaksi', $transaksi);
-    }
-
     public function rekapPengaduan()
     {
         $periode = request()->periode ?: 0;
@@ -88,9 +81,13 @@ class TransaksiController extends AppBaseController
     {
         $transaksis = Transaksi::join('ruangans','ruangans.id','=','transaksis.ruangan_id')
         ->join('penjagas','penjagas.id','=','ruangans.penjaga_id')
+        ->leftJoin('pesan_konfirmasis as pwr2', 'pwr2.id', '=', 'transaksis.konfirmasi_wr_id')
+        ->leftJoin('pesan_konfirmasis as pkbsd', 'pkbsd.id', '=', 'transaksis.konfirmasi_kbsd_id')
+        ->leftJoin('pesan_konfirmasis as pkbu', 'pkbu.id', '=', 'transaksis.konfirmasi_kbu_id')
+        ->leftJoin('pesan_konfirmasis as pksbrt', 'pksbrt.id', '=', 'transaksis.konfirmasi_ksbrt_id')
         ->join('peminjams','peminjams.id','=','transaksis.peminjam_id')
         ->join('users','users.id','=','peminjams.user_id')
-        ->select('transaksis.*', 'ruangans.nama_ruangan as nama_ruangan', 'penjagas.nomor_handphone as nomor_handphone', 'peminjams.nama_organisasi as nama_organisasi', 'users.name as nama_peminjam')->get();
+        ->select('transaksis.*', 'pwr2.status as pwr2_status', 'pkbsd.status as pkbsd_status', 'pkbu.status as pkbu_status', 'pksbrt.status as pksbrt_status', 'ruangans.nama_ruangan as nama_ruangan', 'penjagas.nomor_handphone as nomor_handphone', 'peminjams.nama_organisasi as nama_organisasi', 'users.name as nama_peminjam')->get();
         if ($id == 2) {
             $transaksis = $transaksis->filter(function ($value) {
                 return $value->ruangan->need_wr_conf == 1;
@@ -212,9 +209,18 @@ class TransaksiController extends AppBaseController
         $transaksis = Transaksi::where('peminjam_id' , '=', $id)
         ->join('ruangans','ruangans.id','=','transaksis.ruangan_id')
         ->join('penjagas','penjagas.id','=','ruangans.penjaga_id')
-        ->select('transaksis.*', 'ruangans.nama_ruangan', 'penjagas.nomor_handphone')
+        ->leftJoin('pesan_konfirmasis as pwr2', 'pwr2.id', '=', 'transaksis.konfirmasi_wr_id')
+        ->leftJoin('pesan_konfirmasis as pkbsd', 'pkbsd.id', '=', 'transaksis.konfirmasi_kbsd_id')
+        ->leftJoin('pesan_konfirmasis as pkbu', 'pkbu.id', '=', 'transaksis.konfirmasi_kbu_id')
+        ->leftJoin('pesan_konfirmasis as pksbrt', 'pksbrt.id', '=', 'transaksis.konfirmasi_ksbrt_id')
+        ->select('transaksis.*', 'pwr2.status as pwr2_status', 'pkbsd.status as pkbsd_status', 'pkbu.status as pkbu_status', 'pksbrt.status as pksbrt_status', 'ruangans.nama_ruangan as nama_ruangan', 'penjagas.nomor_handphone as nomor_handphone')
         ->orderBy('transaksis.id')->get();
-        // dd($transaksis);
+        // $transaksis = Transaksi::where('peminjam_id' , '=', $id)
+        // ->join('ruangans','ruangans.id','=','transaksis.ruangan_id')
+        // ->join('penjagas','penjagas.id','=','ruangans.penjaga_id')
+        // ->select('transaksis.*', 'ruangans.nama_ruangan', 'penjagas.nomor_handphone')
+        // ->orderBy('transaksis.id')->get();
+        
         return response($transaksis);
     }
 
@@ -279,5 +285,19 @@ class TransaksiController extends AppBaseController
         Flash::success('Peminjaman berhasil dibatalkan');
 
         return response($transaksi);
+    }
+
+    public function cetak($id)
+    {
+        $transaksi = Transaksi::find($id);
+
+        set_time_limit(300);
+
+        $pdf = PDF::loadView('transaksis.print', ['transaksi' => $transaksi])->setPaper('a4', 'landscape'); // <--- load your view into theDOM wrapper;
+        $path = public_path('pdf_docs'); // <--- folder to store the pdf documents into the server;
+        $fileName =  'cetak'.time().'.'.'pdf' ; // <--giving the random filename,
+        $pdf->save($path . '/' . $fileName);
+        $generated_pdf_link = url('pdf_docs/'.$fileName);
+        return response()->json($generated_pdf_link);
     }
 }
