@@ -214,7 +214,7 @@ class TransaksiController extends AppBaseController
         ->leftJoin('pesan_konfirmasis as pkbu', 'pkbu.id', '=', 'transaksis.konfirmasi_kbu_id')
         ->leftJoin('pesan_konfirmasis as pksbrt', 'pksbrt.id', '=', 'transaksis.konfirmasi_ksbrt_id')
         ->select('transaksis.*', 'pwr2.status as pwr2_status', 'pkbsd.status as pkbsd_status', 'pkbu.status as pkbu_status', 'pksbrt.status as pksbrt_status', 'ruangans.nama_ruangan as nama_ruangan', 'penjagas.nomor_handphone as nomor_handphone')
-        ->orderBy('transaksis.id')->get();
+        ->orderBy('transaksis.id', 'DESC')->get();
         // $transaksis = Transaksi::where('peminjam_id' , '=', $id)
         // ->join('ruangans','ruangans.id','=','transaksis.ruangan_id')
         // ->join('penjagas','penjagas.id','=','ruangans.penjaga_id')

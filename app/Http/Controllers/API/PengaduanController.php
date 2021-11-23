@@ -59,18 +59,16 @@ class PengaduanController extends AppBaseController
      *
      * @return Response
      */
-    public function store($pem, $tran, CreatePengaduanRequest $request)
+    public function store(CreatePengaduanRequest $request)
     {
-        $transaksi = Transaksi::find($tran);
+        $transaksi = Transaksi::find($request->transaksi_id);
         $input = $request->all();
 
         $pengaduan = $this->pengaduanRepository->create($input);
         $transaksi->status = 1;
         $transaksi->save();
 
-        Flash::success('Peminjaman telah dikonfirmasi selesai');
-
-        return redirect()->back();
+        return response()->json([$pengaduan]);
     }
 
     /**
