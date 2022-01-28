@@ -81,15 +81,23 @@ class PesanKonfirmasiController extends AppBaseController
             $tolak = true;
         }
         $konfirmasi->save();
-        $konfirmasi_id = PesanKonfirmasi::all()->last()->id;
+        $konfirmasi_id = PesanKonfirmasi::all()->last();
         if ($request->target == 2) {
-            $transaksi->konfirmasi_wr_id = $konfirmasi_id;
+            $transaksi->konfirmasi_wr_id = $konfirmasi_id->id;
+            $transaksi->pesan_wr_id = $konfirmasi_id->pesan;
+            $transaksi->stspesan_wr_id = $konfirmasi_id->status;
         } elseif ($request->target == 3) {
-            $transaksi->konfirmasi_kbsd_id = $konfirmasi_id;
+            $transaksi->konfirmasi_kbsd_id = $konfirmasi_id->id;
+            $transaksi->pesan_kbsd_id = $konfirmasi_id->pesan;
+            $transaksi->stspesan_kbsd_id = $konfirmasi_id->status;
         } elseif ($request->target == 4) {
-            $transaksi->konfirmasi_kbu_id = $konfirmasi_id;
+            $transaksi->konfirmasi_kbu_id = $konfirmasi_id->id;
+            $transaksi->pesan_kbu_id = $konfirmasi_id->pesan;
+            $transaksi->stspesan_kbu_id = $konfirmasi_id->status;
         } elseif ($request->target == 5) {
-            $transaksi->konfirmasi_ksbrt_id = $konfirmasi_id;
+            $transaksi->konfirmasi_ksbrt_id = $konfirmasi_id->id;
+            $transaksi->pesan_ksbrt_id = $konfirmasi_id->pesan;
+            $transaksi->stspesan_ksbrt_id = $konfirmasi_id->status;
         }
         if ($tolak) {
             $transaksi->status = 2;
